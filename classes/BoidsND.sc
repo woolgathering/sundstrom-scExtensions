@@ -414,12 +414,12 @@ BoidUnitND {
       var amount = 0;
       if(pos[i] < bounds[i][0]) {
           amount = bounds[i][0] + pos[i].abs; // how far off are we
-          amount = maxVelocity * (amount/20).min(1);
+          amount = maxVelocity * (amount/maxVelocity).min(1);
         }
         {
           if(pos[i] > bounds[i][1]) {
             amount = bounds[i][1] - pos[i]; // how far off are we
-            amount = maxVelocity * (amount/20).min(1);
+            amount = maxVelocity * (amount/maxVelocity).min(1);
           };
         };
       boundVectors.add(amount); // add it to the list
