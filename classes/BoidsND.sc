@@ -478,7 +478,6 @@ BoidUnitND {
 
   moveBoid {|targets, obstacles|
     vel = vel + centerInstinct + innerDistance + matchVelocity; // sum the vectors and get a new velocity
-    // if (targets.isEmpty.not) {vel = vel + this.calcTargets(targets)}; // if there are targets, calculate the vector
     if (targets.isEmpty.not) {vel = vel + this.calcTargetsWithField(targets)}; // if there are targets, calculate the vector
     // if (obstacles.isEmpty.not) {vel = vel + this.calcObstacles(obstacles)}; // if there are obstacles, calculate the vector
     this.bound;
@@ -507,8 +506,11 @@ BoidUnitND {
   calcTargetsWithField {|targets|
     var vec = RealVector.zero(dim), distFromTarget, gravity;
     targets.do{|target|
+      // gravity = dim.collect{|i|
+      //   var diff = pos[i] - target[0][i]; // get the difference in a dimension
+      //   this.inverseSquare(diff, target[1][i]); // get the gravity in dimension
+      // };
       distFromTarget = this.pos.dist(target[0]).max(1); // get the distance from this boid to the target
-      // distFromTarget = this.pos.dist(target[0]).max(1); // get the distance from this boid to the target
       gravity = this.inverseSquare(distFromTarget, target[1]*100).clip(0,1);
       vec = vec + ((target[0]-pos)*gravity);
     };
