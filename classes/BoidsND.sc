@@ -113,9 +113,10 @@ BoidsND {
 
   addBoid {|nodeID|
     var initPos, boid;
-    initPos = RealVector.rand(dimensions, bounds[0][0], bounds[0][1]); // get a random vector position
-    initPos = centerOfMass + initPos; // place it near the center of the flock
-    boid = BoidUnitND.new(dim: dimensions, pos: initPos, maxVelocity: workingMaxVelocity)
+    // initPos = RealVector.rand(dimensions, bounds[0][0], bounds[0][1]); // get a random vector position
+    // initPos = centerOfMass + initPos; // place it near the center of the flock
+    initPos = centerOfMass; // place it near the center of the flock
+    boid = BoidUnitND.new(dimensions, bounds, initPos, maxVelocity: workingMaxVelocity)
       .bounds_(bounds); // make it
     boidList.add(boid); // add it
   }
@@ -351,6 +352,11 @@ BoidsND {
     ^boidList.asArray;
   }
 
+  // alias for boidList
+  boids {
+    ^boidList.asArray;
+  }
+
   targets {
     ^targets.asArray;
   }
@@ -365,7 +371,7 @@ BoidsND {
 // not directly used but rather used by Boids
 ////////////////////////////////////////////////////////////
 BoidUnitND {
-  var <>dim, <bounds, <>vel, <>pos, <maxVelocity, <nodeID, <centerOfMass;
+  var <>dim, <bounds, <>pos, <>vel, <maxVelocity, <nodeID, <centerOfMass;
   var <>centerInstinct, <>innerDistance, <>matchVelocity, <>useInnerBounds, <>innerBounds;
   classvar halfCosTable;
 
@@ -382,7 +388,7 @@ BoidUnitND {
   }
 
   *new {|dim, bounds, vel, pos, maxVelocity = 5|
-    ^super.newCopyArgs(dim, bounds, vel, pos, maxVelocity).init;
+    ^super.newCopyArgs(dim, bounds, pos, vel, maxVelocity).init(dim, bounds, nil, nil, nil, maxVelocity);
   }
 
   *rand {|dim, bounds, centerOfMass, innerDistance, matchVelocity, maxVelocity = 5|
@@ -392,7 +398,7 @@ BoidUnitND {
   init {|...args|
     dim = args[0]; // set dimensions
     bounds = args[1];
-    maxVelocity = args[5] ? 5;
+    maxVelocity = args[5] ? 10;
     vel = vel ? RealVector.rand(dim,-1*maxVelocity, maxVelocity);
     pos = pos ? RealVector.rand(dim,-1*bounds[0][0], bounds[0][0]); // this could be made better by taking the bounds of each dimension into account
 
