@@ -510,15 +510,22 @@ BoidUnitND {
 
   // how to calculate distance in multiple dimensions?!
   calcTargetsWithField {|targets|
-    var vec = RealVector.zero(dim), distFromTarget, gravity;
+    var vec = RealVector.zero(dim), distFromTarget, gravity, reweighted;
     targets.do{|target|
-      // gravity = dim.collect{|i|
-      //   var diff = pos[i] - target[0][i]; // get the difference in a dimension
-      //   this.inverseSquare(diff, target[1][i]); // get the gravity in dimension
-      // };
       distFromTarget = this.pos.dist(target[0]).max(1); // get the distance from this boid to the target
-      gravity = this.inverseSquare(distFromTarget, target[1]*100).clip(0,1);
-      vec = vec + ((target[0]-pos)*gravity);
+      
+      // if gravity is an array, apply gravities in specific dimensions
+      if(target[1].isArray) {
+        reweighted = dim.collect{|i|
+          gravity = this.inverseSquare(distFromTarget, target[1][i]*100).clip(0,1);
+          (target[0][i]-pos[i])*gravity; // save it
+        };
+        vec = vec + RealVector.newFrom(reweighted);
+      } {
+        // else it's an integer so apply it evenly
+        gravity = this.inverseSquare(distFromTarget, target[1]*100).clip(0,1);
+        vec = vec + ((target[0]-pos)*gravity);
+      };
     };
     ^vec; // return the vector
   }
