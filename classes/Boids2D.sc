@@ -287,7 +287,7 @@ Boids2D {
   }
 
   // visualizer
-  visualizer {|returnWindow = false|
+  visualizer {|showLabels = false, returnWindow = false|
     var window, loop;
     window = Window("Flock Visualizer").front;
     window.view.background_(Color.white);
@@ -297,21 +297,23 @@ Boids2D {
       ////////
       // plot the boids as black squares ////////
       ////////
-      boidList.do{|boid|
+      boidList.do{|boid, i|
         var normalizedPos;
         Pen.color = Color.black;
+        // normalize the position for the window
         normalizedPos = [
           (boid.pos.x+bounds[0][0].abs)/(bounds[0][0].abs*2),
-          (boid.pos.y+bounds[1][0].abs)/(bounds[1][0].abs*2)
+          (1 - (boid.pos.y+bounds[1][0].abs)/(bounds[1][0].abs*2))
         ];
-        normalizedPos = [
-          normalizedPos[0],
-          1 - normalizedPos[1]
-        ];
-        // normalizedPos.postln;
-        Pen.addRect(
-          Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5);
-        );
+        // normalizedPos = [
+        //   normalizedPos[0],
+        //   1 - normalizedPos[1]
+        // ];
+        Pen.addRect(Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5));
+        // show labels on the boids
+        if(showLabels) {
+          Pen.stringAtPoint(i.asString, Point(window.bounds.width*normalizedPos[0] + 3, window.bounds.height*normalizedPos[1] + 3), color: Color.blue);
+        };
         Pen.perform(\fill);
       };
 
@@ -419,16 +421,25 @@ BoidUnit2D {
   }
 
   bound {
-    var vec, thisX = 0, thisY = 0;
-    // x position
-    if (pos.x < bounds[0][0]) {thisX = 1*maxVelocity};
-    if (pos.x > bounds[0][1]) {thisX = -1*maxVelocity};
-    // y position
-    if (pos.y < bounds[1][0]) {thisY = 1*maxVelocity};
-    if (pos.y > bounds[1][1]) {thisY = -1*maxVelocity};
+    var vec = List.new(0), thisX = 0, thisY = 0;
+    2.collect{|i|
+      var amount = 0;
+      if(pos[i] < bounds[i][0]) {
+          amount = bounds[i][0] + pos[i].abs; // how far off are we
+          amount = maxVelocity * (amount/maxVelocity).min(1); // scale it according to how far off we are
+        }
+        {
+          if(pos[i] > bounds[i][1]) {
+            amount = bounds[i][1] - pos[i]; // how far off are we
+            amount = maxVelocity * (amount/maxVelocity).min(1); // scale it according to how far off we are
+          };
+        };
+      vec.add(amount); // add it to the list
+    };
 
-    vec = RealVector2D.newFrom([thisX,thisY]);
-    pos = pos + vec; // add the vectors
+    vec = RealVector2D.newFrom(vec.asArray);
+    // pos = pos + vec; // add the vectors
+    vel = vel + vec; // add the vectors in velocity-space
   }
 
   cirlceBound {
@@ -442,9 +453,10 @@ BoidUnit2D {
       diff = dist-radius; // get the difference
       // vec = RealVector.zero(2).asRealVector2D + ((zero-pos)*diff.lincurve(1, 20.0, 0.01, 1.0, 0.5, \min)); // make a new vector and scale it
       // vec = RealVector.zero(2).asRealVector2D + ((zero-pos)*diff.lincurve(1, 20.0, 0.01, 5.0, 0.5)*maxVelocity); // make a new vector and scale it
-      vec = RealVector.zero(2).asRealVector2D + (zero-pos); // make a new vector and scale it
+      // vec = RealVector.zero(2).asRealVector2D + (zero-pos); // make a new vector and scale it
+      vec = (RealVector.zero(2).asRealVector2D + (zero-pos)) * (diff/maxVelocity).min(1); // make a new vector and scale it
       vec = vec.limit(maxVelocity);
-      pos = pos + vec; // add it
+      vel = vel + vec; // add it
     };
   }
 
@@ -489,8 +501,8 @@ BoidUnit2D {
     // if (targets.isEmpty.not) {vel = vel + this.calcTargets(targets)}; // if there are targets, calculate the vector
     if (targets.isEmpty.not) {vel = vel + this.calcTargetsWithField(targets)}; // if there are targets, calculate the vector
     if (obstacles.isEmpty.not) {vel = vel + this.calcObstacles(obstacles)}; // if there are obstacles, calculate the vector
-    // this.bound; // bound the coordinates
-    this.cirlceBound;
+    this.bound; // bound the coordinates
+    // this.cirlceBound;
     if (useInnerBounds) {this.innerBound}; // only do the inner bounds when we want
     vel = vel.limit(maxVelocity); // speed limit
     pos = pos + vel; // get the new position
