@@ -474,13 +474,13 @@ BoidUnitND {
       if(obstacle[1].isArray) {
         reweighted = dim.collect{|i|
           gravity = this.inverseSquare(distFromTarget, obstacle[1][i]*10).clip(0,1);
-          (obstacle[0][i]-pos[i])*gravity; // save it
+          (obstacle[0][i]+pos[i])*gravity; // save it
         };
         vec = RealVector.newFrom(reweighted); // get the vector
         } {
           // else it's an integer so apply it evenly
           gravity = this.inverseSquare(distFromTarget, obstacle[1]).clip(0,1);
-          vec = vec + ((obstacle[0]-pos)*gravity);
+          vec = vec + ((obstacle[0]+pos)*gravity);
         };
       };
       ^vec; // return the vector
