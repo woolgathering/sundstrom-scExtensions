@@ -57,7 +57,7 @@ Boids2D {
   prGetInnerDistance {
     boidList.do{|boid|
       var vec, dist, count;
-      vec = RealVector.zero(2).asRealVector2D; // a new zero vector
+      vec = RealVector2D.newFrom([0,0]); // a new zero vector
       count = 1;
       boidList.do{|thisBoid|
         // var tmpVec = RealVector.zero(2).asRealVector2D;
@@ -68,21 +68,14 @@ Boids2D {
           if (abs(dist) < minSpace) {
             ///// original ///////
             // vec = vec - ((boid.pos-thisBoid.pos)/abs(dist)); // calculate the difference vector
-            vec = vec - ((boid.pos-thisBoid.pos)*(minSpace/dist.pow(2))); // calculate the difference vector
+            vec = vec + ((boid.pos-thisBoid.pos)*(minSpace/(dist**2))); // calculate the difference vector
             /////////////////////
-
-            // vec = vec - (thisBoid.pos-boid.pos); // calculate the difference vector
-            // tmpVec = boid.pos-thisBoid.pos;
-            // tmpVec = tmpVec.norm/abs(dist);
-            // tmpVec = thisBoid.pos - boid.pos;
-            // vec = vec + tmpVec;
-
-            count = count+1;
+            count = count+1; // keep counting the boids in the vicinity
           };
         };
       };
-    vec = vec/count; // average
-    boid.innerDistance = innerDistance * vec; // set the innerDistance vector in each BoidUnit
+      vec = vec/count; // average
+      boid.innerDistance = innerDistance * vec; // set the innerDistance vector in each BoidUnit
     };
   }
 
@@ -110,12 +103,11 @@ Boids2D {
     };
   }
 
-  addBoid {|nodeID|
-    var initPos, boid;
-    initPos = RealVector.rand2D(bounds[0][0] * -0.5, bounds[0][1]*0.5, bounds[1][0] * -0.5, bounds[1][1]*0.5).asRealVector2D; // get a random vector position
-    initPos = centerOfMass + initPos.limit(maxVelocity*2); // place it near the center of the flock
-    boid = BoidUnit2D.new(pos: initPos, maxVelocity: workingMaxVelocity)
-      .bounds_(bounds) // make it
+  addBoid {|initPos|
+    var boid, initVel;
+    initPos = initPos ? centerOfMass; // place it near the center of the flock
+    initVel = RealVector2D.newFrom(Array.fill(2, {rrand(0.0,3.0)})); // random velocity
+    boid = BoidUnit2D.new(initVel, initPos, bounds, centerOfMass, workingMaxVelocity)
       .useInnerBounds_(useInnerBounds)
       .innerBounds_(innerBounds);
     boidList.add(boid); // add it
@@ -188,10 +180,10 @@ Boids2D {
   ///////////////////////////////////
   // targeting
   ///////////////////////////////////
-  addTarget {|vector, strength|
-    if(vector.isNil or: strength.isNil)
-      {"Insuffient arguments: %, %: no target was added!".format(vector, strength).warn; ^this};
-    targets.add([RealVector2D.newFrom(vector[..1]), strength]);
+  addTarget {|vector, gravity|
+    if(vector.isNil or: gravity.isNil)
+      {"Insuffient arguments: %, %: no target was added!".format(vector, gravity).warn; ^this};
+    targets.add([RealVector2D.newFrom(vector[..1]), gravity]);
   }
 
   clearTargets {
@@ -206,19 +198,19 @@ Boids2D {
     };
   }
 
-  editTarget {|index, target, strength|
+  editTarget {|index, target, gravity|
     if(index.isNil) {"Index is nil: no targets were edited!".warn}; // throw a warning if insufficent args were supplied
     if(target.notNil) {targets[index][0] = RealVector2D.newFrom(target[..1])}; // should check here if target is a Vector or not
-    if(strength.notNil) {targets[index][1] = strength}; // edit the strength parameter
+    if(gravity.notNil) {targets[index][1] = gravity}; // edit the gravity parameter
   }
 
   /////////////////////////////////////////
   ///// obstacles
   //////////////////////////////////////////
-  addObstacle {|vector, strength|
-    if(vector.isNil or: strength.isNil)
-      {"Insuffient arguments: %, %: no obstacle was added!".format(vector, strength).warn; ^this};
-    obstacles.add([RealVector2D.newFrom(vector[..1]), strength]); // add a new obstacle
+  addObstacle {|vector, repulsion|
+    if(vector.isNil or: repulsion.isNil)
+      {"Insuffient arguments: %, %: no obstacle was added!".format(vector, repulsion).warn; ^this};
+    obstacles.add([RealVector2D.newFrom(vector[..1]), repulsion]); // add a new obstacle
   }
 
   clearObstacles {
@@ -233,10 +225,10 @@ Boids2D {
     };
   }
 
-  editObstacle {|index, obstacle, strength|
+  editObstacle {|index, obstacle, repulsion|
     if(index.isNil) {"Index is nil: no obstacles were edited!".warn}; // throw a warning if insufficent args were supplied
     if(obstacle.notNil) {obstacles[index][0] = RealVector2D.newFrom(obstacle[..1])}; // should check here if target is a Vector or not
-    if(strength.notNil) {obstacles[index][1] = strength}; // edit the strength parameter
+    if(repulsion.notNil) {obstacles[index][1] = repulsion}; // edit the repulsion parameter
   }
 
   // print the variable information for this flock
@@ -310,7 +302,7 @@ Boids2D {
         // Pen.addOval(Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5));
         Pen.addWedge(
           Point(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1]), // point
-          10, // radius (pixels)
+          7.5, // radius (pixels)
           (-1*boid.vel.theta) - 3.5342917352885, // start angle (angle - pi/8 - pi) for visualizer corrections
           // (-1*boid.vel.theta) - (pi/8) - pi, // start angle (angle - pi/8 - pi) for visualizer corrections
           0.78539816339745 // size of angle (pi/4)
@@ -323,7 +315,7 @@ Boids2D {
       };
 
       ////////
-      // plot the targets as blue squares
+      // plot the targets as blue circles
       ////////
       targets.do{|target, i|
         var normalizedPos, color;
@@ -335,7 +327,7 @@ Boids2D {
         ];
         normalizedPos = [normalizedPos[0], 1 - normalizedPos[1]];
         // normalizedPos.postln;
-        Pen.addRect(
+        Pen.addOval(
           Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5);
         );
         if(showLabels) {
@@ -345,7 +337,7 @@ Boids2D {
       };
 
       ////////
-      // plot the obstacles as red squares
+      // plot the obstacles as red circles
       ////////
       obstacles.do{|obstacle, i|
         var normalizedPos, color;
@@ -357,7 +349,7 @@ Boids2D {
         ];
         normalizedPos = [normalizedPos[0], 1 - normalizedPos[1]];
 
-        Pen.addRect(
+        Pen.addOval(
           Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5);
         );
         if(showLabels) {
@@ -416,15 +408,11 @@ Boids2D {
 // not directly used but rather used by Boids
 ////////////////////////////////////////////////////////////
 BoidUnit2D {
-  var <>vel, <>pos, <maxVelocity, <nodeID, <centerOfMass;
-  var <>centerInstinct, <>innerDistance, <>matchVelocity, <bounds, <>useInnerBounds, <>innerBounds;
+  var <>vel, <>pos, <bounds, <centerOfMass, <maxVelocity;
+  var <>centerInstinct, <>innerDistance, <>matchVelocity, <>useInnerBounds, <>innerBounds;
 
-  // perhaps set an independence value, such that this weight value is the weight of a random vector added to the final
-  // position of the boid? In that way, the vector calculated from the rest of the flock can be diminished and the
-  // random value can be added so it has more perceived independence
-
-  *new {|vel, pos, maxVelocity = 5|
-    ^super.newCopyArgs(vel, pos, maxVelocity).init;
+  *new {|vel, pos, bounds, centerOfMass, maxVelocity = 5|
+    ^super.newCopyArgs(vel, pos, bounds, centerOfMass, maxVelocity).init;
   }
 
   *rand {|bounds, centerOfMass, innerDistance, matchVelocity, maxVelocity = 5|
@@ -432,10 +420,10 @@ BoidUnit2D {
   }
 
   init {|...args|
-    bounds = args[0] ? [[-500,500],[-500,500]]; // [ [xmin, xmax], [ymin, ymax]]
-    vel = vel ? RealVector.rand2D(-5,5,-5,5).asRealVector2D;
+    bounds = bounds ? args[0] ? [[-500,500],[-500,500]]; // [ [xmin, xmax], [ymin, ymax]]
+    vel = vel ? RealVector2D.newFrom(Array.fill(2, {rrand(0.0,3.0)}));
     pos = pos ? RealVector.rand2D(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]).asRealVector2D;
-    maxVelocity = args[4] ? 5;
+    maxVelocity = maxVelocity ? args[4] ? 5; // max velocity
 
     // if these are not set, set them
     centerOfMass = args[1] ? RealVector.rand2D(-10,10,-10,10).asRealVector2D;
@@ -542,7 +530,7 @@ BoidUnit2D {
   calcObstacles {|obstacles|
     var vec = RealVector.zero(2).asRealVector2D;
     obstacles.do{|obstacle|
-      vec = vec - ((obstacle[0]+pos)*obstacle[1]);
+      vec = vec + ((obstacle[0]+pos)*obstacle[1]);
     };
     ^vec; // return the vector
   }
