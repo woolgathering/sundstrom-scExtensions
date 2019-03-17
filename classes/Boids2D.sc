@@ -288,8 +288,10 @@ Boids2D {
 
   // visualizer
   visualizer {|showLabels = false, returnWindow = false|
-    var window, loop;
-    window = Window("Flock Visualizer").front;
+    var window, loop, availableBounds, size;
+    availableBounds = Window.availableBounds;
+    size = availableBounds.width/3;
+    window = Window("Flock Visualizer", Rect(availableBounds.width-size,availableBounds.height-size,size,size)).front;
     window.view.background_(Color.white);
 
     // draw the boids (as squares for now)
@@ -303,38 +305,64 @@ Boids2D {
         // normalize the position for the window
         normalizedPos = [
           (boid.pos.x+bounds[0][0].abs)/(bounds[0][0].abs*2),
-          (1 - (boid.pos.y+bounds[1][0].abs)/(bounds[1][0].abs*2))
+          1 - ((boid.pos.y+bounds[1][0].abs)/(bounds[1][0].abs*2))
         ];
-        // normalizedPos = [
-        //   normalizedPos[0],
-        //   1 - normalizedPos[1]
-        // ];
-        Pen.addRect(Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5));
+        // Pen.addOval(Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5));
+        Pen.addWedge(
+          Point(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1]), // point
+          10, // radius (pixels)
+          (-1*boid.vel.theta) - 3.5342917352885, // start angle (angle - pi/8 - pi) for visualizer corrections
+          // (-1*boid.vel.theta) - (pi/8) - pi, // start angle (angle - pi/8 - pi) for visualizer corrections
+          0.78539816339745 // size of angle (pi/4)
+        );
         // show labels on the boids
         if(showLabels) {
-          Pen.stringAtPoint(i.asString, Point(window.bounds.width*normalizedPos[0] + 3, window.bounds.height*normalizedPos[1] + 3), color: Color.blue);
+          Pen.stringAtPoint(i.asString, Point(window.bounds.width*normalizedPos[0] + 3, window.bounds.height*normalizedPos[1] + 3), color: Color.black);
         };
         Pen.perform(\fill);
       };
 
       ////////
-      // plot the targets as red squares
+      // plot the targets as blue squares
       ////////
-      targets.do{|target|
-        var normalizedPos;
-        Pen.color = Color.red;
+      targets.do{|target, i|
+        var normalizedPos, color;
+        color = Color.fromHexString("4989FF");
+        Pen.color = color;
         normalizedPos = [
           (target[0].x+bounds[0][0].abs)/(bounds[0][0].abs*2),
           (target[0].y+bounds[1][0].abs)/(bounds[1][0].abs*2)
         ];
-        normalizedPos = [
-          normalizedPos[0],
-          1 - normalizedPos[1]
-        ];
+        normalizedPos = [normalizedPos[0], 1 - normalizedPos[1]];
         // normalizedPos.postln;
         Pen.addRect(
           Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5);
         );
+        if(showLabels) {
+          Pen.stringAtPoint(i.asString, Point(window.bounds.width*normalizedPos[0] + 3, window.bounds.height*normalizedPos[1] + 3), color: color);
+        };
+        Pen.perform(\fill);
+      };
+
+      ////////
+      // plot the obstacles as red squares
+      ////////
+      obstacles.do{|obstacle, i|
+        var normalizedPos, color;
+        color = Color.fromHexString("FF4949");
+        Pen.color = color;
+        normalizedPos = [
+          (obstacle[0].x+bounds[0][0].abs)/(bounds[0][0].abs*2),
+          (obstacle[0].y+bounds[1][0].abs)/(bounds[1][0].abs*2)
+        ];
+        normalizedPos = [normalizedPos[0], 1 - normalizedPos[1]];
+
+        Pen.addRect(
+          Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5);
+        );
+        if(showLabels) {
+          Pen.stringAtPoint(i.asString, Point(window.bounds.width*normalizedPos[0] + 3, window.bounds.height*normalizedPos[1] + 3), color: color);
+        };
         Pen.perform(\fill);
       };
 
