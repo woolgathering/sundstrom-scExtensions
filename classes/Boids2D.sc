@@ -67,7 +67,8 @@ Boids2D {
           // if the absolute value of the distance is less than the threshold
           if (abs(dist) < minSpace) {
             ///// original ///////
-            vec = vec - ((boid.pos-thisBoid.pos)/abs(dist)); // calculate the difference vector
+            // vec = vec - ((boid.pos-thisBoid.pos)/abs(dist)); // calculate the difference vector
+            vec = vec - ((boid.pos-thisBoid.pos)*(minSpace/dist.pow(2))); // calculate the difference vector
             /////////////////////
 
             // vec = vec - (thisBoid.pos-boid.pos); // calculate the difference vector
