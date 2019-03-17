@@ -531,8 +531,8 @@ BoidUnit2D {
   calcTargetsWithField {|targets|
     var vec = RealVector.zero(2).asRealVector2D, distFromTarget, gravity;
     targets.do{|target|
-      distFromTarget = this.pos.dist(target[0]).max(1); // get the distance from this boid to the target
-      gravity = this.inverseSquare(distFromTarget, target[1]*100).clip(0,1);
+      distFromTarget = pos.dist(target[0]).max(1); // get the distance from this boid to the target
+      gravity = this.inverseSquare(distFromTarget, target[1]*100).clip(0,1); // must multiply by 100??
       vec = vec + ((target[0]-pos)*gravity);
     };
     ^vec; // return the vector
