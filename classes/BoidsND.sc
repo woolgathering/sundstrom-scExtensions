@@ -267,8 +267,10 @@ BoidsND {
 
   // visualizer
   visualizer {|whichDimensions = #[0,1], showLabels = false, returnWindow = false|
-    var window, loop, plotX, plotY;
-    window = Window("Dimensions: % : %".format(whichDimensions[0], whichDimensions[1])).front;
+    var window, loop, availableBounds, size, plotX, plotY;
+    availableBounds = Window.availableBounds;
+    size = availableBounds.width/3;
+    window = Window("Dimensions: % : %".format(whichDimensions[0], whichDimensions[1]), Rect(availableBounds.width-size,availableBounds.height-size,size,size)).front;
     window.view.background_(Color.white);
     plotX = whichDimensions[0];
     plotY = whichDimensions[1];
@@ -289,8 +291,7 @@ BoidsND {
         Pen.addWedge(
           Point(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1]), // point
           10, // radius (pixels)
-          (-1*boid.vel.theta) - 3.5342917352885, // start angle (angle - pi/8 - pi) for visualizer corrections
-          // (-1*boid.vel.theta) - (pi/8) - pi, // start angle (angle - pi/8 - pi) for visualizer corrections
+          (-1*atan2(boid.vel[plotY], boid.vel[plotX])) - 3.5342917352885, // start angle (angle - pi/8 - pi) for visualizer corrections
           0.78539816339745 // size of angle (pi/4)
         );
         if(showLabels) {
@@ -312,7 +313,7 @@ BoidsND {
         ];
         normalizedPos = [normalizedPos[0], 1 - normalizedPos[1]];
 
-        Pen.addRect(
+        Pen.addOval(
           Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5);
         );
         if(showLabels) {
@@ -334,7 +335,7 @@ BoidsND {
         ];
         normalizedPos = [normalizedPos[0], 1 - normalizedPos[1]];
 
-        Pen.addRect(
+        Pen.addOval(
           Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5);
         );
         if(showLabels) {
