@@ -437,7 +437,6 @@ BoidUnit2D {
     };
 
     vec = RealVector2D.newFrom(vec.asArray);
-    // pos = pos + vec; // add the vectors
     vel = vel + vec; // add the vectors in velocity-space
   }
 
@@ -499,9 +498,8 @@ BoidUnit2D {
     vel = vel + centerInstinct + innerDistance + matchVelocity; // sum the vectors and get a new velocity
     // if (targets.isEmpty.not) {vel = vel + this.calcTargets(targets)}; // if there are targets, calculate the vector
     if (targets.isEmpty.not) {vel = vel + this.calcTargetsWithField(targets)}; // if there are targets, calculate the vector
-    if (obstacles.isEmpty.not) {vel = vel + this.calcObstacles(obstacles)}; // if there are obstacles, calculate the vector
+    if (obstacles.isEmpty.not) {vel = vel + this.calcObstaclesWithField(obstacles)}; // if there are obstacles, calculate the vector
     this.bound; // bound the coordinates
-    // this.cirlceBound;
     if (useInnerBounds) {this.innerBound}; // only do the inner bounds when we want
     vel = vel.limit(maxVelocity); // speed limit
     pos = pos + vel; // get the new position
@@ -515,7 +513,17 @@ BoidUnit2D {
   calcObstacles {|obstacles|
     var vec = RealVector.zero(2).asRealVector2D;
     obstacles.do{|obstacle|
-      vec = vec - ((obstacle[0]-pos)*obstacle[1]);
+      vec = vec - ((obstacle[0]+pos)*obstacle[1]);
+    };
+    ^vec; // return the vector
+  }
+
+  calcObstaclesWithField {|obstacles|
+    var vec = RealVector.zero(2).asRealVector2D, distFromTarget, gravity;
+    obstacles.do{|obstacale|
+      distFromTarget = pos.dist(obstacale[0]).max(1); // get the distance from this boid to the obstacale
+      gravity = this.inverseSquare(distFromTarget, obstacale[1]).clip(0,1);
+      vec = vec + ((obstacale[0]+pos)*gravity);
     };
     ^vec; // return the vector
   }
