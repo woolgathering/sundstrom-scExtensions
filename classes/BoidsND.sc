@@ -70,9 +70,10 @@ BoidsND {
           // if the absolute value of the distance is less than the threshold
           if (abs(dist) < minSpace) {
             ///// original ///////
-            vec = vec - ((boid.pos-thisBoid.pos)/abs(dist)); // calculate the difference vector
+            // vec = vec - ((boid.pos-thisBoid.pos)/abs(dist)); // calculate the difference vector
             /////////////////////
 
+            vec = vec - ((boid.pos-thisBoid.pos)*(minSpace/dist.pow(2))); // calculate the difference vector
             // vec = vec - (thisBoid.pos-boid.pos); // calculate the difference vector
             // tmpVec = boid.pos-thisBoid.pos;
             // tmpVec = tmpVec.norm/abs(dist);
@@ -265,7 +266,7 @@ BoidsND {
   }
 
   // visualizer
-  visualizer {|whichDimensions = #[0,1], returnWindow = false|
+  visualizer {|whichDimensions = #[0,1], showLabels = false, returnWindow = false|
     var window, loop, plotX, plotY;
     window = Window("Dimensions: % : %".format(whichDimensions[0], whichDimensions[1])).front;
     window.view.background_(Color.white);
@@ -277,64 +278,71 @@ BoidsND {
       ////////
       // plot the boids as black squares ////////
       ////////
-      boidList.do{|boid|
+      boidList.do{|boid, i|
         var normalizedPos;
         Pen.color = Color.black;
         normalizedPos = [
           (boid.pos[plotX]+bounds[plotX][0].abs)/(bounds[plotX][0].abs*2),
-          (boid.pos[plotY]+bounds[plotY][0].abs)/(bounds[plotY][0].abs*2)
+          1- ((boid.pos[plotY]+bounds[plotY][0].abs)/(bounds[plotY][0].abs*2))
         ];
-        normalizedPos = [
-          normalizedPos[0],
-          1 - normalizedPos[1]
-        ];
-        // normalizedPos.postln;
-        Pen.addRect(
-          Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5);
+        // Pen.addOval(Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5));
+        Pen.addWedge(
+          Point(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1]), // point
+          10, // radius (pixels)
+          (-1*boid.vel.theta) - 3.5342917352885, // start angle (angle - pi/8 - pi) for visualizer corrections
+          // (-1*boid.vel.theta) - (pi/8) - pi, // start angle (angle - pi/8 - pi) for visualizer corrections
+          0.78539816339745 // size of angle (pi/4)
         );
+        if(showLabels) {
+          Pen.stringAtPoint(i.asString, Point(window.bounds.width*normalizedPos[0] + 3, window.bounds.height*normalizedPos[1] + 3), color: Color.black);
+        };
         Pen.perform(\fill);
       };
 
       ////////
-      // plot the targets as red squares
+      // plot the targets as blue squares
       ////////
-      targets.do{|target|
-        var normalizedPos;
-        Pen.color = Color.red;
+      targets.do{|target, i|
+        var normalizedPos, color;
+        color = Color.fromHexString("4989FF");
+        Pen.color = color;
         normalizedPos = [
           (target[0][plotX]+bounds[plotX][0].abs)/(bounds[plotX][0].abs*2),
           (target[0][plotY]+bounds[plotY][0].abs)/(bounds[plotY][0].abs*2)
         ];
-        normalizedPos = [
-          normalizedPos[0],
-          1 - normalizedPos[1]
-        ];
-        // normalizedPos.postln;
+        normalizedPos = [normalizedPos[0], 1 - normalizedPos[1]];
+
         Pen.addRect(
           Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5);
         );
+        if(showLabels) {
+          Pen.stringAtPoint(i.asString, Point(window.bounds.width*normalizedPos[0] + 3, window.bounds.height*normalizedPos[1] + 3), color: color);
+        };
         Pen.perform(\fill);
       };
 
       ////////
-      // plot the inner bounds as an unfilled square
+      // plot the obstacles as red squares
       ////////
-      // {
-      //   var verticies, size;
-      //   size = innerBounds[0][1];
-      //   size = size/(bounds[1][1]*2); // normalize it
-      //   verticies = [
-      //     Point((-1*size)/2, (-1*size)/2),
-      //     Point(size/2, size/2),
-      //     Point(size/2, (-1*size)/2),
-      //     Point((-1*size)/2, size/2)
-      //   ];
-      //   Pen.color = Color.grey;
-      //   Pen.addRect(
-      //     Rect(verticies[0].x, verticies[0].y, size, size);
-      //   );
-      //   Pen.perform(\stroke);
-      // }.value;
+      obstacles.do{|obstacle, i|
+        var normalizedPos, color;
+        color = Color.fromHexString("FF4949");
+        Pen.color = color;
+        normalizedPos = [
+          (obstacle[0][plotX]+bounds[plotX][0].abs)/(bounds[plotX][0].abs*2),
+          (obstacle[0][plotY]+bounds[plotY][0].abs)/(bounds[plotY][0].abs*2)
+        ];
+        normalizedPos = [normalizedPos[0], 1 - normalizedPos[1]];
+
+        Pen.addRect(
+          Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5);
+        );
+        if(showLabels) {
+          Pen.stringAtPoint(i.asString, Point(window.bounds.width*normalizedPos[0] + 3, window.bounds.height*normalizedPos[1] + 3), color: color);
+        };
+        Pen.perform(\fill);
+      };
+
     };
 
     loop = {
@@ -372,12 +380,8 @@ BoidsND {
 ////////////////////////////////////////////////////////////
 BoidUnitND {
   var <>dim, <bounds, <>pos, <>vel, <maxVelocity, <nodeID, <centerOfMass;
-  var <>centerInstinct, <>innerDistance, <>matchVelocity, <>useInnerBounds, <>innerBounds;
+  var <>centerInstinct, <>innerDistance, <>matchVelocity;
   classvar halfCosTable;
-
-  // perhaps set an independence value, such that this weight value is the weight of a random vector added to the final
-  // position of the boid? In that way, the vector calculated from the rest of the flock can be diminished and the
-  // random value can be added so it has more perceived independence
 
   *initClass {
     halfCosTable = 2048.collect{|i|
@@ -409,8 +413,6 @@ BoidUnitND {
 
     centerInstinct = centerOfMass/100; // set this here
     vel = vel.limit(maxVelocity); // limit the size of the velocity vector
-    useInnerBounds = false; // default to not using an inner bound method
-    // innerBounds = bounds * 0.1; // calculate the size as default
   }
 
   bound {
@@ -446,48 +448,11 @@ BoidUnitND {
     ^dist.sum.sqrt; // return the distance
   }
 
-  // // an inner bound. Useful when using as a spatializer
-  // innerBound {
-  //   var vec, thisX = 0, thisY = 0;
-  //   // along the x-axis
-  //   if ((pos.x > innerBounds[0][0]) and: (pos.x < innerBounds[0][1])) {
-  //     /*
-  //     // get the scalar for the x-axis
-  //     dist = dist(pos,zero);
-  //     ratio = 1 - (dist/innerBounds[0][1]); // use the positive number since they're both the same
-  //     scalar = innerBoundScalar * ratio; // multiply by the "anti-gravity"
-  //
-  //     .... then
-  //
-  //     thisX = scalar * maxVelocity;
-  //     thisX = -1 * scalar * maxVelocity;
-  //     */
-  //     if (pos.x >= 0) {
-  //       thisX = maxVelocity; // move right
-  //     } {
-  //       thisX = -1*maxVelocity; // move left
-  //     };
-  //   };
-  //   // along the y-axis
-  //   if ((pos.y > innerBounds[1][0]) and: (pos.y < innerBounds[1][1])) {
-  //     if (pos.y >= 0) {
-  //       thisY = maxVelocity; // move up
-  //     } {
-  //       thisY = -1*maxVelocity; // move down
-  //     };
-  //   };
-  //
-  //   // "Calculating inner bound...".postln;
-  //   vec = RealVector2D.newFrom([thisX,thisY]);
-  //   pos = pos + vec; // add the vectors
-  // }
-
   moveBoid {|targets, obstacles|
     vel = vel + centerInstinct + innerDistance + matchVelocity; // sum the vectors and get a new velocity
     if (targets.isEmpty.not) {vel = vel + this.calcTargetsWithField(targets)}; // if there are targets, calculate the vector
-    // if (obstacles.isEmpty.not) {vel = vel + this.calcObstacles(obstacles)}; // if there are obstacles, calculate the vector
-    this.bound;
-
+    if (obstacles.isEmpty.not) {vel = vel + this.calcObstaclesWithField(obstacles)}; // if there are obstacles, calculate the vector
+    this.bound; // bound the coordinates
     vel = vel.limit(maxVelocity); // speed limit
     pos = pos + vel; // get the new position
   }
@@ -500,6 +465,26 @@ BoidUnitND {
     ^vec; // return the vector
   }
 
+  calcObstaclesWithField {|obstacles|
+    var vec = RealVector.zero(dim), distFromTarget, gravity, reweighted;
+    obstacles.do{|obstacle|
+      distFromTarget = pos.dist(obstacle[0]).max(1); // get the distance from this boid to the obstacle
+      // if gravity is an array, apply gravities in specific dimensions
+      if(obstacle[1].isArray) {
+        reweighted = dim.collect{|i|
+          gravity = this.inverseSquare(distFromTarget, obstacle[1][i]*10).clip(0,1);
+          (obstacle[0][i]-pos[i])*gravity; // save it
+        };
+        vec = RealVector.newFrom(reweighted); // get the vector
+        } {
+          // else it's an integer so apply it evenly
+          gravity = this.inverseSquare(distFromTarget, obstacle[1]).clip(0,1);
+          vec = vec + ((obstacle[0]-pos)*gravity);
+        };
+      };
+      ^vec; // return the vector
+    }
+
   calcTargets {|targets|
     var vec = RealVector.zero(dim);
     targets.do{|target|
@@ -508,19 +493,17 @@ BoidUnitND {
     ^vec; // return the vector
   }
 
-  // how to calculate distance in multiple dimensions?!
   calcTargetsWithField {|targets|
     var vec = RealVector.zero(dim), distFromTarget, gravity, reweighted;
     targets.do{|target|
-      distFromTarget = this.pos.dist(target[0]).max(1); // get the distance from this boid to the target
-      
+      distFromTarget = pos.dist(target[0]).max(1); // get the distance from this boid to the target
       // if gravity is an array, apply gravities in specific dimensions
       if(target[1].isArray) {
         reweighted = dim.collect{|i|
-          gravity = this.inverseSquare(distFromTarget, target[1][i]*100).clip(0,1);
+          gravity = this.inverseSquare(distFromTarget, target[1][i]*1000).clip(0,1);
           (target[0][i]-pos[i])*gravity; // save it
         };
-        vec = vec + RealVector.newFrom(reweighted);
+        vec = RealVector.newFrom(reweighted); // get the vector
       } {
         // else it's an integer so apply it evenly
         gravity = this.inverseSquare(distFromTarget, target[1]*100).clip(0,1);
@@ -532,6 +515,11 @@ BoidUnitND {
 
   inverseSquare {|dist = 1, gravity = 1|
     ^(1*gravity)/(dist**2);
+  }
+
+  columbsLaw {|dist, q1, q2|
+    var k = 8987551787.3681764;
+    ^((q1*q2)/(dist**2))*k;
   }
 
   /////////////////////////////////
