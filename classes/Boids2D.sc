@@ -29,7 +29,7 @@ Boids2D {
     workingMaxVelocity = maxVelocity * timestep; // set the workingMaxVelocity (accounting for the timestep)
     minSpace = 1; // minmum distance between boids in a flock in meters
     centerOfMass = RealVector.zero(2).asRealVector2D; // init center of mass at the origin
-    bounds = [[-50,50], [-50,50]]; // set the default bounds
+    bounds = [[-500,500], [-500,500]]; // set the default bounds
     useInnerBounds = false; // default to not using the inner bounds
     innerBoundRatio = 0.1; // default to 10%
     innerBounds = innerBoundRatio * bounds; // for ease of getting and setting
@@ -407,6 +407,7 @@ BoidUnit2D {
     vel = vel ? RealVector.rand2D(-15,15,-15,15).asRealVector2D;
     pos = pos ? RealVector.rand2D(-50,50,-50,50).asRealVector2D;
     maxVelocity = args[3] ? 5;
+    bounds = args[0] ? [[-500,500],[-500,500]]; // [ [xmin, xmax], [ymin, ymax]]
 
     // if these are not set, set them
     centerOfMass = args[0] ? RealVector.rand2D(-10,10,-10,10).asRealVector2D;
@@ -415,7 +416,6 @@ BoidUnit2D {
 
     centerInstinct = centerOfMass/100; // set this here
     vel = vel.limit(maxVelocity); // limit the size of the velocity vector
-    bounds = [[-25,25],[-25,25]]; // [ [xmin, xmax], [ymin, ymax]]
     useInnerBounds = false; // default to not using an inner bound method
     innerBounds = bounds * 0.1; // calculate the size as default
   }
