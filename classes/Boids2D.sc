@@ -102,8 +102,7 @@ Boids2D {
     // could instead pass an array of Nodes from which the NodeID's could be extracted and passed...
     num.do{
       var boid;
-      boid = BoidUnit2D.rand(centerInstinct, innerDistance, matchVelocity, maxVelocity: maxVelocity*timestep)
-        .bounds_(bounds) // make it
+      boid = BoidUnit2D.rand(bounds, centerInstinct, innerDistance, matchVelocity, workingMaxVelocity)
         .useInnerBounds_(useInnerBounds)
         .innerBounds_(innerBounds);
       boidList.add(boid); // add it to the list
@@ -114,7 +113,7 @@ Boids2D {
     var initPos, boid;
     initPos = RealVector.rand2D(bounds[0][0] * -0.5, bounds[0][1]*0.5, bounds[1][0] * -0.5, bounds[1][1]*0.5).asRealVector2D; // get a random vector position
     initPos = centerOfMass + initPos.limit(maxVelocity*2); // place it near the center of the flock
-    boid = BoidUnit2D.new(pos: initPos, maxVelocity: maxVelocity*timestep)
+    boid = BoidUnit2D.new(pos: initPos, maxVelocity: workingMaxVelocity)
       .bounds_(bounds) // make it
       .useInnerBounds_(useInnerBounds)
       .innerBounds_(innerBounds);
@@ -399,20 +398,20 @@ BoidUnit2D {
     ^super.newCopyArgs(vel, pos, maxVelocity).init;
   }
 
-  *rand {|centerOfMass, innerDistance, matchVelocity, maxVelocity = 5|
-    ^super.new.init(centerOfMass, innerDistance, matchVelocity, maxVelocity);
+  *rand {|bounds, centerOfMass, innerDistance, matchVelocity, maxVelocity = 5|
+    ^super.new.init(bounds, centerOfMass, innerDistance, matchVelocity, maxVelocity);
   }
 
   init {|...args|
-    vel = vel ? RealVector.rand2D(-15,15,-15,15).asRealVector2D;
-    pos = pos ? RealVector.rand2D(-50,50,-50,50).asRealVector2D;
-    maxVelocity = args[3] ? 5;
     bounds = args[0] ? [[-500,500],[-500,500]]; // [ [xmin, xmax], [ymin, ymax]]
+    vel = vel ? RealVector.rand2D(-5,5,-5,5).asRealVector2D;
+    pos = pos ? RealVector.rand2D(bounds[0][0],bounds[0][1],bounds[1][0],bounds[1][1]).asRealVector2D;
+    maxVelocity = args[4] ? 5;
 
     // if these are not set, set them
-    centerOfMass = args[0] ? RealVector.rand2D(-10,10,-10,10).asRealVector2D;
-    innerDistance = args[1] ? RealVector.rand2D(-10,10,-10,10).asRealVector2D;
-    matchVelocity = args[2] ? RealVector.rand2D(-10,10,-10,10).asRealVector2D;
+    centerOfMass = args[1] ? RealVector.rand2D(-10,10,-10,10).asRealVector2D;
+    innerDistance = args[2] ? RealVector.rand2D(-10,10,-10,10).asRealVector2D;
+    matchVelocity = args[3] ? RealVector.rand2D(-10,10,-10,10).asRealVector2D;
 
     centerInstinct = centerOfMass/100; // set this here
     vel = vel.limit(maxVelocity); // limit the size of the velocity vector
