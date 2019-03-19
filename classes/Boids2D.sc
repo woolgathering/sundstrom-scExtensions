@@ -28,7 +28,7 @@ Boids2D {
     maxVelocity = 5; // speed limit in meters per second (need to multiply it by the timestep)
     workingMaxVelocity = maxVelocity * timestep; // set the workingMaxVelocity (accounting for the timestep)
     minSpace = 1; // minmum distance between boids in a flock in meters
-    centerOfMass = RealVector.zero(2).asRealVector2D; // init center of mass at the origin
+    centerOfMass = RealVector2D.zero; // init center of mass at the origin
     bounds = [[-500,500], [-500,500]]; // set the default bounds
     useInnerBounds = false; // default to not using the inner bounds
     innerBoundRatio = 0.1; // default to 10%
@@ -41,7 +41,7 @@ Boids2D {
 
   // rule 1
   prGetCenterOfMass {
-    var sum = RealVector.zero(2).asRealVector2D; // a zero vector to add to
+    var sum = RealVector2D.zero; // a zero vector to add to
     boidList.do{|boid, i|
       sum = sum + boid.pos; // sum the values
     };
@@ -60,7 +60,7 @@ Boids2D {
       vec = RealVector2D.newFrom([0,0]); // a new zero vector
       count = 1;
       boidList.do{|thisBoid|
-        // var tmpVec = RealVector.zero(2).asRealVector2D;
+        // var tmpVec = RealVector2D.zero;
         // don't check for boids that are the exact same object
         if ((boid === thisBoid).not) {
           dist = boid.pos.dist(thisBoid.pos); // get the distance between these boids
@@ -81,7 +81,7 @@ Boids2D {
 
   // rule 3
   prGetVelocityMatch {
-    var sum = RealVector.zero(2).asRealVector2D; // a new zero vector
+    var sum = RealVector2D.zero; // a new zero vector
     // sum the velocities
     boidList.do{|boid|
       sum = sum + boid.vel;
@@ -299,12 +299,10 @@ Boids2D {
           (boid.pos.x+bounds[0][0].abs)/(bounds[0][0].abs*2),
           1 - ((boid.pos.y+bounds[1][0].abs)/(bounds[1][0].abs*2))
         ];
-        // Pen.addOval(Rect(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1], 5, 5));
         Pen.addWedge(
           Point(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1]), // point
           7.5, // radius (pixels)
-          (-1*boid.vel.theta) - 3.5342917352885, // start angle (angle - pi/8 - pi) for visualizer corrections
-          // (-1*boid.vel.theta) - (pi/8) - pi, // start angle (angle - pi/8 - pi) for visualizer corrections
+          (-1*boid.vel.theta) - 3.5342917352885, // start angle (angle - sizeOfAngle/2 (pi/8) - pi) for visualizer corrections
           0.78539816339745 // size of angle (pi/4)
         );
         // show labels on the boids
@@ -394,6 +392,10 @@ Boids2D {
     ^boidList.asArray;
   }
 
+  boids {
+    ^boidList.asArray;
+  }
+
   targets {
     ^targets.asArray;
   }
@@ -437,39 +439,35 @@ BoidUnit2D {
   }
 
   bound {
-    var vec = List.new(0), thisX = 0, thisY = 0;
-    2.collect{|i|
-      var amount = 0;
+    var vec = RealVector2D.zero; // a zero vector
+    2.do{|i|
+      var amount;
       if(pos[i] < bounds[i][0]) {
-          amount = bounds[i][0] + pos[i].abs; // how far off are we
-          amount = maxVelocity * (amount/maxVelocity).min(1); // scale it according to how far off we are
-        }
-        {
-          if(pos[i] > bounds[i][1]) {
-            amount = bounds[i][1] - pos[i]; // how far off are we
-            amount = maxVelocity * (amount/maxVelocity).min(1); // scale it according to how far off we are
-          };
+        amount = bounds[i][0] + pos[i].abs; // how far off are we
+        vec[i] = amount; // change zero for this
+      } {
+        if(pos[i] > bounds[i][1]) {
+          amount = bounds[i][1] - pos[i]; // how far off are we
+          vec[i] = amount; // change zero for this
         };
-      vec.add(amount); // add it to the list
+      };
     };
-
-    vec = RealVector2D.newFrom(vec.asArray);
     vel = vel + vec; // add the vectors in velocity-space
   }
 
   cirlceBound {
     var vec, radius, dist, diff, zero, gravity;
-    zero = RealVector.zero(2).asRealVector2D;
+    zero = RealVector2D.zero;
     radius = bounds[0][1]; // get a radius from the origin to a side
     dist = pos.dist(zero); // get the distance between this and the origin
 
     // if the distance is greater than the radius, then add another vector that points to the origin
     if(dist>radius) {
       diff = dist-radius; // get the difference
-      // vec = RealVector.zero(2).asRealVector2D + ((zero-pos)*diff.lincurve(1, 20.0, 0.01, 1.0, 0.5, \min)); // make a new vector and scale it
-      // vec = RealVector.zero(2).asRealVector2D + ((zero-pos)*diff.lincurve(1, 20.0, 0.01, 5.0, 0.5)*maxVelocity); // make a new vector and scale it
-      // vec = RealVector.zero(2).asRealVector2D + (zero-pos); // make a new vector and scale it
-      vec = (RealVector.zero(2).asRealVector2D + (zero-pos)) * (diff/maxVelocity).min(1); // make a new vector and scale it
+      // vec = RealVector2D.zero + ((zero-pos)*diff.lincurve(1, 20.0, 0.01, 1.0, 0.5, \min)); // make a new vector and scale it
+      // vec = RealVector2D.zero + ((zero-pos)*diff.lincurve(1, 20.0, 0.01, 5.0, 0.5)*maxVelocity); // make a new vector and scale it
+      // vec = RealVector2D.zero + (zero-pos); // make a new vector and scale it
+      vec = (RealVector2D.zero + (zero-pos)) * (diff/maxVelocity).min(1); // make a new vector and scale it
       vec = vec.limit(maxVelocity);
       vel = vel + vec; // add it
     };
@@ -512,10 +510,9 @@ BoidUnit2D {
   }
 
   moveBoid {|targets, obstacles|
-    vel = vel + centerInstinct + innerDistance + matchVelocity; // sum the vectors and get a new velocity
-    // if (targets.isEmpty.not) {vel = vel + this.calcTargets(targets)}; // if there are targets, calculate the vector
     if (targets.isEmpty.not) {vel = vel + this.calcTargetsWithField(targets)}; // if there are targets, calculate the vector
     if (obstacles.isEmpty.not) {vel = vel + this.calcObstaclesWithField(obstacles)}; // if there are obstacles, calculate the vector
+    vel = vel + centerInstinct + innerDistance + matchVelocity; // sum the vectors and get a new velocity
     this.bound; // bound the coordinates
     if (useInnerBounds) {this.innerBound}; // only do the inner bounds when we want
     vel = vel.limit(maxVelocity); // speed limit
@@ -523,12 +520,12 @@ BoidUnit2D {
   }
 
   getPanVals {
-    var zero = RealVector.zero(2).asRealVector2D;
+    var zero = RealVector2D.zero;
     ^[pos.theta, pos.dist(zero)]; // return the angle in radians and the distance from the origin
   }
 
   calcObstacles {|obstacles|
-    var vec = RealVector.zero(2).asRealVector2D;
+    var vec = RealVector2D.zero;
     obstacles.do{|obstacle|
       vec = vec + ((obstacle[0]+pos)*obstacle[1]);
     };
@@ -536,17 +533,19 @@ BoidUnit2D {
   }
 
   calcObstaclesWithField {|obstacles|
-    var vec = RealVector.zero(2).asRealVector2D, distFromTarget, gravity;
+    var vec = RealVector2D.zero, distFromTarget, gravity;
     obstacles.do{|obstacale|
       distFromTarget = pos.dist(obstacale[0]).max(1); // get the distance from this boid to the obstacale
-      gravity = this.inverseSquare(distFromTarget, obstacale[1]).clip(0,1);
+      // gravity = this.inverseSquare(distFromTarget, obstacale[1]).clip(0,1); // exponential decay
+      // gravity = this.arcTan(distFromTarget, obstacale[1]*10).clip(0,1);
+      gravity = this.arcTan2(distFromTarget, obstacale[1]).clip(0,1);
       vec = vec + ((obstacale[0]+pos)*gravity);
     };
     ^vec; // return the vector
   }
 
   calcTargets {|targets|
-    var vec = RealVector.zero(2).asRealVector2D;
+    var vec = RealVector2D.zero;
     targets.do{|target|
       vec = vec + ((target[0]-pos)*target[1]);
     };
@@ -554,7 +553,7 @@ BoidUnit2D {
   }
 
   calcTargetsWithField {|targets|
-    var vec = RealVector.zero(2).asRealVector2D, distFromTarget, gravity;
+    var vec = RealVector2D.zero, distFromTarget, gravity;
     targets.do{|target|
       distFromTarget = pos.dist(target[0]).max(1); // get the distance from this boid to the target
       gravity = this.inverseSquare(distFromTarget, target[1]*100).clip(0,1); // must multiply by 100??
@@ -563,8 +562,25 @@ BoidUnit2D {
     ^vec; // return the vector
   }
 
+  /////////////////////////////////
+  // gravity/repulsion scaling functions
+  /////////////////////////////////
   inverseSquare {|dist = 1, gravity = 1|
-    ^(1*gravity)/(dist**2);
+    ^gravity/(dist**2);
+  }
+
+  arcTan {|dist = 1, gravity = 1, scalar = 10|
+    gravity = gravity.reciprocal*scalar;
+    dist = (dist*gravity)-gravity;
+    gravity = atan(-1*dist);
+    ^(gravity/3)+0.5;
+  }
+
+  arcTan2 {|dist = 1, gravity = 1, scalar = 5|
+    // scalar is where the arctangent function passes through 0 normally
+    dist = (dist-(gravity*scalar));
+    gravity = atan(-1*dist*gravity.reciprocal);
+    ^(gravity/3)+0.5;
   }
 
   /////////////////////////////////
