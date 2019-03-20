@@ -535,11 +535,11 @@ BoidUnit2D {
   calcObstaclesWithField {|obstacles|
     var vec = RealVector2D.zero, distFromTarget, gravity;
     obstacles.do{|obstacale|
-      distFromTarget = pos.dist(obstacale[0]).max(1); // get the distance from this boid to the obstacale
+      distFromTarget = pos.dist(obstacale[0]); // get the distance from this boid to the obstacale
       // gravity = this.inverseSquare(distFromTarget, obstacale[1]).clip(0,1); // exponential decay
       // gravity = this.arcTan(distFromTarget, obstacale[1]*10).clip(0,1);
-      gravity = this.arcTan2(distFromTarget, obstacale[1]).clip(0,1);
-      vec = vec + ((obstacale[0]+pos)*gravity);
+      gravity = this.arcTan2(distFromTarget, obstacale[1]).clip(0,5);
+      vec = vec + ((obstacale[0]+pos)*gravity); // adding the vector to the position gives them the tendency to go around counterclockwise????
     };
     ^vec; // return the vector
   }
