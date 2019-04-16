@@ -450,9 +450,9 @@ BoidUnitND {
   }
 
   moveBoid {|targets, obstacles|
+    if (targets.isEmpty.not) {vel = vel + this.calcTargets(targets)}; // if there are targets, calculate the vector
+    if (obstacles.isEmpty.not) {vel = vel + this.calcObstacles(obstacles)}; // if there are obstacles, calculate the vector
     vel = vel + centerInstinct + innerDistance + matchVelocity; // sum the vectors and get a new velocity
-    if (targets.isEmpty.not) {vel = vel + this.calcTargetsWithField(targets)}; // if there are targets, calculate the vector
-    if (obstacles.isEmpty.not) {vel = vel + this.calcObstaclesWithField(obstacles)}; // if there are obstacles, calculate the vector
     this.bound; // bound the coordinates
     vel = vel.limit(maxVelocity); // speed limit
     pos = pos + vel; // get the new position
@@ -461,64 +461,65 @@ BoidUnitND {
   calcObstacles {|obstacles|
     var vec = RealVector.zero(dim);
     obstacles.do{|obstacle|
-      vec = vec - ((obstacle[0]-pos)*obstacle[1]);
+      vec = this.prCalcVec(obstacle, vec, \obstacle);
     };
     ^vec; // return the vector
   }
-
-  calcObstaclesWithField {|obstacles|
-    var vec = RealVector.zero(dim), distFromTarget, gravity, reweighted;
-    obstacles.do{|obstacle|
-      distFromTarget = pos.dist(obstacle[0]).max(1); // get the distance from this boid to the obstacle
-      // if gravity is an array, apply gravities in specific dimensions
-      if(obstacle[1].isArray) {
-        reweighted = dim.collect{|i|
-          gravity = this.inverseSquare(distFromTarget, obstacle[1][i]*10).clip(0,1);
-          (obstacle[0][i]+pos[i])*gravity; // save it
-        };
-        vec = RealVector.newFrom(reweighted); // get the vector
-        } {
-          // else it's an integer so apply it evenly
-          gravity = this.inverseSquare(distFromTarget, obstacle[1]).clip(0,1);
-          vec = vec + ((obstacle[0]+pos)*gravity);
-        };
-      };
-      ^vec; // return the vector
-    }
 
   calcTargets {|targets|
     var vec = RealVector.zero(dim);
     targets.do{|target|
-      vec = vec + ((target[0]-pos)*target[1]);
+      vec = this.prCalcVec(target, vec, \target);
     };
     ^vec; // return the vector
   }
 
-  calcTargetsWithField {|targets|
-    var vec = RealVector.zero(dim), distFromTarget, gravity, reweighted;
-    targets.do{|target|
-      distFromTarget = pos.dist(target[0]).max(1); // get the distance from this boid to the target
-      // if gravity is an array, apply gravities in specific dimensions
-      if(target[1].isArray) {
-        reweighted = dim.collect{|i|
-          gravity = this.inverseSquare(distFromTarget, target[1][i]*1000).clip(0,1);
-          (target[0][i]-pos[i])*gravity; // save it
+  prCalcVec {|object, vec, type|
+    var distFromTarget, diff, gravity, reweighted;
+    distFromTarget = pos.dist(object.at(\pos)).max(0.001); // get the distance from the object
+    switch (type)
+      {\target} {
+        diff = object.at(\pos)-pos; // get the diff
+        // if gravity is an array, apply gravities in specific dimensions
+        if(object.at(\strength).isArray) {
+          reweighted = dim.collect{|i|
+            ((object.at(\strength)[i]*1000)/distFromTarget).max(0); // 1/r
+          };
+          gravity = RealVector.newFrom(reweighted); // get the vector
+        } {
+          // else it's an integer so apply it evenly
+          gravity = ((object.at(\strength)*100)/distFromTarget).max(0); // 1/r
         };
-        vec = RealVector.newFrom(reweighted); // get the vector
-      } {
-        // else it's an integer so apply it evenly
-        gravity = this.inverseSquare(distFromTarget, target[1]*100).clip(0,1);
-        vec = vec + ((target[0]-pos)*gravity);
+      }
+      {\obstacle} {
+        diff = pos-object.at(\pos); // get the diff
+        gravity = this.prInverseSquare(distFromTarget, object.at(\strength)*1000).max(0); // 1/r^2
       };
-    };
-    ^vec; // return the vector
+    ^vec + ((diff/diff.norm)*gravity); // return
   }
 
-  inverseSquare {|dist = 1, gravity = 1|
-    ^(1*gravity)/(dist**2);
+  /////////////////////////////////
+  // gravity/repulsion scaling functions
+  /////////////////////////////////
+  prInverseSquare {|dist = 1, gravity = 1|
+    ^gravity/(dist**2);
   }
 
-  columbsLaw {|dist, q1, q2|
+  prArcTan {|dist = 1, gravity = 1, scalar = 10|
+    gravity = gravity.reciprocal*scalar;
+    dist = (dist*gravity)-gravity;
+    gravity = atan(-1*dist);
+    ^(gravity/3)+0.5;
+  }
+
+  prArcTan2 {|dist = 1, gravity = 1, scalar = 5|
+    // scalar is where the arctangent function passes through 0 normally
+    dist = (dist-(gravity*scalar));
+    gravity = atan(-1*dist*gravity.reciprocal);
+    ^(gravity/3)+0.5;
+  }
+
+  prColumbsLaw {|dist, q1, q2|
     var k = 8987551787.3681764;
     ^((q1*q2)/(dist**2))*k;
   }
