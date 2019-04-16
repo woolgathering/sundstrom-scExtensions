@@ -160,7 +160,7 @@ BoidsND {
   addTarget {|coordinates, gravity|
     if(coordinates.isNil || gravity.isNil)
       {"Insuffient arguments: %, %: no target was added!".format(coordinates, gravity).warn; ^this};
-    targets.add([RealVector.newFrom(coordinates), gravity]);
+    targets.add(Dictionary.with(*[\pos->RealVector.newFrom(coordinates), \strength->gravity]));
   }
 
   clearTargets {
@@ -177,17 +177,18 @@ BoidsND {
 
   editTarget {|index, coordinates, gravity|
     if(index.isNil) {"Index is nil: no targets were edited!".warn}; // throw a warning if insufficent args were supplied
-    if(coordinates.notNil) {targets[index][0] = RealVector.newFrom(coordinates)}; // should check here if target is a Vector or not
-    if(gravity.notNil) {targets[index][1] = gravity}; // edit the strength parameter
+    if(coordinates.notNil) {targets[index].add(\pos->RealVector.newFrom(coordinates))};
+    if(gravity.notNil) {targets[index].add(\strength->gravity)};
   }
 
   /////////////////////////////////////////
   ///// obstacles
   //////////////////////////////////////////
-  addObstacle {|coordinates, gravity|
-    if(coordinates.isNil or: gravity.isNil)
-      {"Insuffient arguments: %, %: no obstacle was added!".format(coordinates, gravity).warn; ^this};
-    obstacles.add([RealVector.newFrom(coordinates), gravity]);
+  addObstacle {|coordinates, repulsion|
+    if(coordinates.isNil or: repulsion.isNil)
+      {"Insuffient arguments: %, %: no obstacle was added!".format(coordinates, repulsion).warn; ^this};
+    obstacles.add(Dictionary.with(*[\pos->RealVector.newFrom(coordinates), \strength->repulsion]));
+
   }
 
   clearObstacles {
@@ -202,10 +203,10 @@ BoidsND {
     };
   }
 
-  editObstacle {|index, coordinates, gravity|
+  editObstacle {|index, coordinates, repulsion|
     if(index.isNil) {"Index is nil: no obstacles were edited!".warn}; // throw a warning if insufficent args were supplied
-    if(coordinates.notNil) {obstacles[index][0] = RealVector.newFrom(coordinates)}; // should check here if target is a Vector or not
-    if(gravity.notNil) {obstacles[index][1] = gravity}; // edit the strength parameter
+    if(coordinates.notNil) {obstacles[index].add(\pos->RealVector.newFrom(coordinates))}; // should check here if target is a Vector or not
+    if(repulsion.notNil) {obstacles[index].add(\strength->repulsion)}; // edit the repulsion parameter
   }
 
   // print the variable information for this flock
