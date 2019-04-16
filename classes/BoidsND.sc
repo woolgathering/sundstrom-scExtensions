@@ -17,7 +17,7 @@
 BoidsND {
   var <>dimensions, <>numBoids, <>timestep, <>centerInstinct, <>innerDistance, <>matchVelocity, <centerOfMass;
   var >boidList, <maxVelocity, workingMaxVelocity, <minSpace, targets, obstacles;
-  var <bounds, <innerBoundRatio, <useInnerBounds, <innerBounds;
+  var <bounds;
 
   *new {|dimensions = 3, numBoids = 10, timestep = 0.5, centerInstinct = 1, innerDistance = 1, matchVelocity = 1|
     ^super.newCopyArgs(dimensions, numBoids, timestep, centerInstinct, innerDistance, matchVelocity).init;
@@ -33,11 +33,7 @@ BoidsND {
     bounds = dimensions.collect{
       [-500, 500]; // 1000 meters (units)
     };
-    useInnerBounds = false; // default to not using the inner bounds
-    innerBoundRatio = 0.1; // default to 10%
-    innerBounds = innerBoundRatio * bounds; // for ease of getting and setting
     this.prFillBoidList(numBoids); // fill the list with boids
-
     targets = List.new(0);
     obstacles = List.new(0);
   }
@@ -154,7 +150,6 @@ BoidsND {
     this.prGetCenterOfMass; // rule 1
     this.prGetInnerDistance; // rule 2
     this.prGetVelocityMatch; // rule 3
-
     func.(this); // evaluate the function while passing this instance
   }
 
@@ -245,24 +240,6 @@ BoidsND {
   minSpace_ {|val|
     minSpace = val;
     this.prGetInnerDistance;
-  }
-
-  // innerBoundRatio_ {|val|
-  //   if (val>0.95) {"Clipped innerBoundRatio to 0.95".warn}; // tell if we're doing something dumb
-  //   innerBoundRatio = val.clip(0,0.95); // clip it
-  //   innerBounds = bounds * innerBoundRatio; // for easer getting
-  //   boidList.do(_.innerBounds_(innerBounds)); // set it in the BoidUnits internally
-  // }
-
-  // useInnerBounds_ {|boolean|
-  //   useInnerBounds = boolean; // set it
-  //   boidList.do(_.useInnerBounds_(useInnerBounds)); // set it for each BoidUnit
-  // }
-
-  // don't let us set the inner bounds manually (for now?)
-  innerBounds_ {
-    "Set innerBounds with innerBoundRatio!".warn;
-    ^this;
   }
 
   // visualizer
@@ -538,6 +515,5 @@ BoidUnitND {
 
   bounds_ {|val|
     bounds = val;
-    // innerBounds = bounds * innerBoundRatio;
   }
 }
