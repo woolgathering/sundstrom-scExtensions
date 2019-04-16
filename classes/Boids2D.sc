@@ -406,7 +406,7 @@ BoidUnit2D {
   }
 
   calcObstacles {|obstacles|
-    var vec = RealVector2D.zero, distFromTarget, gravity, diff;
+    var vec = RealVector2D.zero;
     obstacles.do{|obstacle|
       vec = this.prCalcVec(obstacle, vec, \obstacle);
     };
@@ -414,7 +414,7 @@ BoidUnit2D {
   }
 
   calcTargets {|targets|
-    var vec = RealVector2D.zero, distFromTarget, gravity, diff;
+    var vec = RealVector2D.zero;
     targets.do{|target|
       vec = this.prCalcVec(target, vec, \target);
     };
