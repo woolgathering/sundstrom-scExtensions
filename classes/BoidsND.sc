@@ -29,10 +29,7 @@ BoidsND {
     workingMaxVelocity = maxVelocity * timestep; // set the workingMaxVelocity (accounting for the timestep)
     minSpace = 1; // minmum distance between boids in a flock in meters
     centerOfMass = RealVector.zero(dimensions); // init center of mass at the origin
-    // bounds = [[-500,500], [-500,500]]; // set the default bounds
-    bounds = dimensions.collect{
-      [-500, 500]; // 1000 meters (units)
-    };
+    bounds = dimensions.collect{[-500, 500]}; // 1000 meters
     this.prFillBoidList(numBoids); // fill the list with boids
     targets = List.new(0);
     obstacles = List.new(0);
