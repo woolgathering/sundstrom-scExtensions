@@ -439,16 +439,6 @@ BoidUnitND {
     vel = vel + vec; // add the vectors
   }
 
-  // get multidimensional distance
-  getDist {|vec|
-    var dist;
-    if(vec.size != this.dim) {"Can't get distance; dimensions don't match.".error; ^nil};
-    dist = dim.collect{|i|
-      (this.pos[i] - vec[i])**2;
-    };
-    ^dist.sum.sqrt; // return the distance
-  }
-
   moveBoid {|targets, obstacles|
     if (targets.isEmpty.not) {vel = vel + this.calcTargets(targets)}; // if there are targets, calculate the vector
     if (obstacles.isEmpty.not) {vel = vel + this.calcObstacles(obstacles)}; // if there are obstacles, calculate the vector
