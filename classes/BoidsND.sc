@@ -258,11 +258,6 @@ BoidsND {
         color = Color.black;
         Pen.color = color;
         normalizedPos = getNormalizedPos.(boid.pos[plotX..plotY]);
-
-        // normalizedPos = [
-        //   (boid.pos[plotX]+bounds[plotX][0].abs)/(bounds[plotX][0].abs*2),
-        //   1- ((boid.pos[plotY]+bounds[plotY][0].abs)/(bounds[plotY][0].abs*2))
-        // ];
         Pen.addWedge(
           Point(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1]), // point
           10, // radius (pixels)
@@ -280,15 +275,7 @@ BoidsND {
         var normalizedPos, color;
         color = Color.fromHexString("4989FF");
         Pen.color = color;
-
         normalizedPos = getNormalizedPos.(target.at(\pos)[plotX..plotY]);
-
-        // normalizedPos = [
-        //   (target[0][plotX]+bounds[plotX][0].abs)/(bounds[plotX][0].abs*2),
-        //   (target[0][plotY]+bounds[plotY][0].abs)/(bounds[plotY][0].abs*2)
-        // ];
-        // normalizedPos = [normalizedPos[0], 1 - normalizedPos[1]];
-
         makeCircle.(normalizedPos); // make the circle
         if(showLabels) {makeLabel.(i, normalizedPos, color)};
         Pen.perform(\fill);
@@ -301,14 +288,7 @@ BoidsND {
         var normalizedPos, color;
         color = Color.fromHexString("FF4949");
         Pen.color = color;
-
         normalizedPos = getNormalizedPos.(obstacle.at(\pos)[plotX..plotY]);
-        // normalizedPos = [
-        //   (obstacle[0][plotX]+bounds[plotX][0].abs)/(bounds[plotX][0].abs*2),
-        //   (obstacle[0][plotY]+bounds[plotY][0].abs)/(bounds[plotY][0].abs*2)
-        // ];
-        // normalizedPos = [normalizedPos[0], 1 - normalizedPos[1]];
-
         makeCircle.(normalizedPos);
         if(showLabels) {makeLabel.(i, normalizedPos, color)};
         Pen.perform(\fill);
