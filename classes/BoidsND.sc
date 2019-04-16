@@ -56,23 +56,12 @@ BoidsND {
       vec = RealVector.zero(dimensions); // a new zero vector
       count = 1;
       boidList.do{|thisBoid|
-        // var tmpVec = RealVector.zero(dimensions);
         // don't check for boids that are the exact same object
         if ((boid === thisBoid).not) {
-          dist = boid.pos.dist(thisBoid.pos); // get the distance between these boids <--------------- fix this
+          dist = boid.pos.dist(thisBoid.pos); // get the distance between these boids
           // if the absolute value of the distance is less than the threshold
           if (abs(dist) < minSpace) {
-            ///// original ///////
-            // vec = vec - ((boid.pos-thisBoid.pos)/abs(dist)); // calculate the difference vector
-            /////////////////////
-
             vec = vec + ((boid.pos-thisBoid.pos)*(minSpace/(dist**2))); // calculate the difference vector
-            // vec = vec - (thisBoid.pos-boid.pos); // calculate the difference vector
-            // tmpVec = boid.pos-thisBoid.pos;
-            // tmpVec = tmpVec.norm/abs(dist);
-            // tmpVec = thisBoid.pos - boid.pos;
-            // vec = vec + tmpVec;
-
             count = count+1;
           };
         };
@@ -96,11 +85,9 @@ BoidsND {
   }
 
   prFillBoidList {|num|
-    // could instead pass an array of Nodes from which the NodeID's could be extracted and passed...
     num.do{
       var boid;
-      boid = BoidUnitND.rand(dimensions, bounds, centerInstinct, innerDistance, matchVelocity, workingMaxVelocity)
-        .bounds_(bounds); // make it
+      boid = BoidUnitND.rand(dimensions, bounds, centerInstinct, innerDistance, matchVelocity, workingMaxVelocity);
       boidList.add(boid); // add it to the list
     };
   }
