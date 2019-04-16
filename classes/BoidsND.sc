@@ -105,13 +105,11 @@ BoidsND {
     };
   }
 
-  addBoid {|nodeID|
-    var initPos, boid;
-    // initPos = RealVector.rand(dimensions, bounds[0][0], bounds[0][1]); // get a random vector position
-    // initPos = centerOfMass + initPos; // place it near the center of the flock
-    initPos = centerOfMass; // place it near the center of the flock
-    boid = BoidUnitND.new(dimensions, bounds, initPos, maxVelocity: workingMaxVelocity)
-      .bounds_(bounds); // make it
+  addBoid {|initPos|
+    var boid, initVel;
+    initPos = initPos ? centerOfMass; // place it near the center of the flock
+    initVel = RealVector.newFrom(Array.fill(dimensions, {rrand(0.0,3.0)})); // random velocity
+    boid = BoidUnitND.new(dimensions, bounds, initVel, initPos, workingMaxVelocity); // make it
     boidList.add(boid); // add it
   }
 
@@ -378,17 +376,17 @@ BoidUnitND {
   }
 
   *new {|dim, bounds, vel, pos, maxVelocity = 5|
-    ^super.newCopyArgs(dim, bounds, pos, vel, maxVelocity).init(dim, bounds, nil, nil, nil, maxVelocity);
+    ^super.newCopyArgs(dim, bounds, pos, vel, maxVelocity).init(dim, bounds, nil, nil, nil, maxVelocity).init;
   }
 
-  *rand {|dim, bounds, centerOfMass, innerDistance, matchVelocity, maxVelocity = 5|
+  *rand {|dim, bounds, centerOfMass, innerDistance, matchVelocity, maxVelocity = 0.5|
     ^super.new.init(dim, bounds, centerOfMass, innerDistance, matchVelocity, maxVelocity);
   }
 
   init {|...args|
     dim = args[0]; // set dimensions
-    bounds = args[1];
-    maxVelocity = args[5] ? 10;
+    bounds = bounds ? args[1] ? Array.fill(dim, [-500, 500]);
+    maxVelocity = args[5] ? 0.5;
     vel = vel ? RealVector.rand(dim,-1*maxVelocity, maxVelocity);
     pos = pos ? RealVector.rand(dim,-1*bounds[0][0], bounds[0][0]); // this could be made better by taking the bounds of each dimension into account
 
