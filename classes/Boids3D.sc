@@ -171,7 +171,7 @@ Boids3D {
   addTarget {|pos, gravity|
     if(pos.isNil or: gravity.isNil)
       {"Insuffient arguments: %, %: no target was added!".format(pos, gravity).warn; ^this};
-    targets.add(Dictionary.with(*[\pos->RealVector3D.newFrom(pos[..1]), \strength->gravity]));
+    targets.add(Dictionary.with(*[\pos->RealVector3D.newFrom(pos), \strength->gravity]));
   }
 
   clearTargets {
@@ -188,7 +188,7 @@ Boids3D {
 
   editTarget {|index, pos, gravity|
     if(index.isNil) {"Index is nil: no targets were edited!".warn}; // throw a warning if insufficent args were supplied
-    if(pos.notNil) {targets[index].add(\pos->RealVector3D.newFrom(pos[..1]))}; // should check here if target is a Vector or not
+    if(pos.notNil) {targets[index].add(\pos->RealVector3D.newFrom(pos))}; // should check here if target is a Vector or not
     if(gravity.notNil) {targets[index].add(\strength->gravity)}; // edit the gravity parameter
   }
 
@@ -198,7 +198,7 @@ Boids3D {
   addObstacle {|pos, repulsion|
     if(pos.isNil or: repulsion.isNil)
       {"Insuffient arguments: %, %: no obstacle was added!".format(pos, repulsion).warn; ^this};
-    obstacles.add(Dictionary.with(*[\pos->RealVector3D.newFrom(pos[..1]), \strength->repulsion]));
+    obstacles.add(Dictionary.with(*[\pos->RealVector3D.newFrom(pos), \strength->repulsion]));
   }
 
   clearObstacles {
@@ -215,7 +215,7 @@ Boids3D {
 
   editObstacle {|index, obstacle, repulsion|
     if(index.isNil) {"Index is nil: no obstacles were edited!".warn}; // throw a warning if insufficent args were supplied
-    if(obstacle.notNil) {obstacles[index].add(\pos->RealVector3D.newFrom(obstacle[..1]))}; // should check here if target is a Vector or not
+    if(obstacle.notNil) {obstacles[index].add(\pos->RealVector3D.newFrom(obstacle))}; // should check here if target is a Vector or not
     if(repulsion.notNil) {obstacles[index].add(\strength->repulsion)}; // edit the repulsion parameter
   }
 
