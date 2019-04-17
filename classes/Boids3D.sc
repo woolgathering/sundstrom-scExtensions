@@ -143,7 +143,7 @@ Boids3D {
 
   // creates a rectangle of size [dim]
   bounds_ {|dim|
-    var rect, xLen, yLen;
+    var rect, xLen, yLen, zLen;
     if(dim.isArray) {
       if(dim.size==3) {
         // we're good
@@ -366,7 +366,7 @@ BoidUnit3D {
 
   init {|...args|
     bounds = bounds ? args[0] ? [[-500,500],[-500,500]]; // [ [xmin, xmax], [ymin, ymax]]
-    vel = vel ? RealVector3D.newFrom(Array.fill(2, {rrand(0.0,3.0)}));
+    vel = vel ? RealVector3D.newFrom(Array.fill(3, {rrand(0.0,3.0)}));
     pos = pos ? RealVector.rand(3, bounds[0][0],bounds[0][1]).asRealVector3D;
     maxVelocity = maxVelocity ? args[4] ? 5; // max velocity
 
