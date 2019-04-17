@@ -283,7 +283,7 @@ Boids3D {
         normalizedPos = getNormalizedPos.(boid.pos[plotX..plotY]);
         Pen.addWedge(
           Point(window.bounds.width*normalizedPos[0], window.bounds.height*normalizedPos[1]), // point
-          10, // radius (pixels)
+          7.5, // radius (pixels)
           (-1*atan2(boid.vel[plotY], boid.vel[plotX])) - 3.5342917352885, // start angle (angle - pi/8 - pi) for visualizer corrections
           0.78539816339745 // size of angle (pi/4)
         );
