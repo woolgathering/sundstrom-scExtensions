@@ -413,25 +413,31 @@ BoidUnitND {
   }
 
   prCalcVec {|object, vec, type|
-    var distFromTarget, diff, gravity, reweighted;
-    distFromTarget = pos.dist(object.at(\pos)).max(0.001); // get the distance from the object
+    var distFromObject, diff, gravity, reweighted;
+    distFromObject = pos.dist(object.at(\pos)).max(0.001); // get the distance from the object
     switch (type)
       {\target} {
         diff = object.at(\pos)-pos; // get the diff
-        // if gravity is an array, apply gravities in specific dimensions
         if(object.at(\strength).isArray) {
-          reweighted = dim.collect{|i|
-            ((object.at(\strength)[i]*1000)/distFromTarget).max(0); // 1/r
+          reweighted = dim.collect{|i| // if gravity is an array, apply gravities in specific dimensions
+            ((object.at(\strength)[i]*1000)/distFromObject).max(0); // 1/r
           };
           gravity = RealVector.newFrom(reweighted); // get the vector
-        } {
-          // else it's an integer so apply it evenly
-          gravity = ((object.at(\strength)*100)/distFromTarget).max(0); // 1/r
+        } { // else it's an integer so apply it evenly
+          gravity = ((object.at(\strength)*100)/distFromObject).max(0); // 1/r
         };
       }
       {\obstacle} {
         diff = pos-object.at(\pos); // get the diff
-        gravity = this.prInverseSquare(distFromTarget, object.at(\strength)*1000).max(0); // 1/r^2
+        if(object.at(\strength).isArray) {
+          reweighted = dim.collect{|i| // if gravity is an array, apply gravities in specific dimensions
+            ((object.at(\strength)[i]*1000)/distFromObject).max(0); // 1/r
+          };
+          gravity = RealVector.newFrom(reweighted); // get the vector
+        } { // else it's an integer so apply it evenly
+          gravity = this.prInverseSquare(distFromObject, object.at(\strength)*1000).max(0); // 1/r^2
+          // gravity = dim.collect{|i| this.prInverseSquare(diff[i], object.at(\strength)*1000).max(0)}; // check for distance in particular dimensions
+        };
       };
     ^vec + ((diff/diff.norm)*gravity); // return
   }
