@@ -443,6 +443,10 @@ BoidUnitND {
     ^gravity/(dist**2);
   }
 
+  prInverseCubed {|dist = 1, gravity = 1|
+    ^gravity/(dist**3);
+  }
+
   prArcTan {|dist = 1, gravity = 1, scalar = 10|
     gravity = gravity.reciprocal*scalar;
     dist = (dist*gravity)-gravity;
