@@ -323,6 +323,17 @@ BoidsND {
     ^obstacles.asArray;
   }
 
+  ///////////////////////////////
+  // print and store
+  ///////////////////////////////
+  printOn {|stream|
+    stream << "BoidsND(dim:" << dimensions << ", numBoids: " << boidList.size << ")";
+  }
+
+  storeArgs {|stream|
+    ^[dimensions, boidList.size, timestep, centerInstinct, innerDistance, matchVelocity];
+  }
+
 }
 
 ////////////////////////////////////////////////////////////
