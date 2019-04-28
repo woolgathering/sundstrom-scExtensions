@@ -6,7 +6,7 @@
   Usage:
 
     b = Boids(numBoids: 10); // an initial number of boids. Flock size can be arbitrarily increased by using addBoid()
-    f = {|thisInstance, boids|
+    f = {|thisInstance|
       thisInstace.info; // print info about this flock
       boids.postln; // the list of BoidUnits
     };
@@ -79,8 +79,7 @@ BoidsND {
       sum = sum + boid.vel;
     };
     boidList.do{|boid|
-      var thisSum = sum - boid.vel; // remove this boid from the sum
-      boid.matchVelocity = matchVelocity * ((thisSum/(boidList.size-1)) * 0.125); // send one eigth of the magnitude to the boid
+      boid.matchVelocity = matchVelocity * (((sum-boid.vel)/(boidList.size-1)) * 0.125); // send one eigth of the magnitude to the boid
     };
   }
 
@@ -196,36 +195,7 @@ BoidsND {
     if(repulsion.notNil) {obstacles[index].add(\strength->repulsion)}; // edit the repulsion parameter
   }
 
-  // print the variable information for this flock
-  info {
-    var str = "Boid Info::::\n";
-    str = str ++ "\tnumBoids: %\n".format(numBoids);
-    str = str ++ "\ttimestep: % s\n".format(timestep);
-    str = str ++ "\tcenterInstinct: %\n".format(centerInstinct);
-    str = str ++ "\tinnerDistance: %\n".format(innerDistance);
-    str = str ++ "\tmatchVelocity: %\n".format(matchVelocity);
-    str = str ++ "\tmaxVelocity: % m/s\n".format(maxVelocity);
-    str = str ++ "\tminSpace: % m\n".format(minSpace);
-    str.postln; // print it
-  }
-
-  /////////////////////////////////
-  // custom setter methods
-  /////////////////////////////////
-  maxVelocity_ {|val|
-    maxVelocity = val; // maxVelocity is the maximum length of the velocity vector
-    workingMaxVelocity = maxVelocity * timestep;
-    boidList.do{|boid|
-      boid.maxVelocity = workingMaxVelocity; // set it in each individual boid
-    };
-  }
-
-  minSpace_ {|val|
-    minSpace = val;
-    this.prGetInnerDistance;
-  }
-
-  // visualizer
+  // visualizer ///////////////////////////////////////////////////////////////////////////////////////
   visualizer {|whichDimensions = #[0,1], showLabels = false, returnWindow = false, refreshInterval|
     var window, loop, availableBounds, getNormalizedPos, makeCircle, makeLabel, size, plotX, plotY;
     availableBounds = Window.availableBounds;
@@ -252,7 +222,7 @@ BoidsND {
 
     // draw the boids
     window.drawFunc = {
-      // plot the boids as black squares
+      // plot the boids as black wedges
       boidList.do{|boid, i|
         var normalizedPos, color;
         color = Color.black;
@@ -270,7 +240,7 @@ BoidsND {
         Pen.perform(\fill);
       };
 
-      // plot the targets as blue squares
+      // plot the targets as blue circles
       targets.do{|target, i|
         var normalizedPos, color;
         color = Color.fromHexString("4989FF");
@@ -282,27 +252,55 @@ BoidsND {
       };
 
       ////////
-      // plot the obstacles as red squares
+      // plot the obstacles as red circles
       ////////
       obstacles.do{|obstacle, i|
         var normalizedPos, color;
         color = Color.fromHexString("FF4949");
         Pen.color = color;
         normalizedPos = getNormalizedPos.(obstacle.at(\pos)[plotX..plotY]);
-        makeCircle.(normalizedPos);
+        makeCircle.(normalizedPos); // make the cirlce
         if(showLabels) {makeLabel.(i, normalizedPos, color)};
         Pen.perform(\fill);
       };
-
     };
 
     loop = {
-      refreshInterval = refreshInterval ? timestep;
+      refreshInterval = refreshInterval ? timestep; // if it's nil, use the timestep
       loop {window.refresh; refreshInterval.wait};
     }.fork(AppClock);
 
     window.onClose_({loop.stop});
     if(returnWindow) {^window};
+  }
+
+  /////////////////////////////////
+  // custom setter methods
+  /////////////////////////////////
+  maxVelocity_ {|val|
+    maxVelocity = val; // maxVelocity is the maximum length of the velocity vector
+    workingMaxVelocity = maxVelocity * timestep;
+    boidList.do{|boid|
+      boid.maxVelocity = workingMaxVelocity; // set it in each individual boid
+    };
+  }
+
+  minSpace_ {|val|
+    minSpace = val;
+    this.prGetInnerDistance;
+  }
+
+  wrap_ {|boolean|
+    wrap = boolean;
+    boidList.do(_.wrap_(boolean));
+  }
+
+  timestep_ {|interval|
+    timestep = interval;
+    workingMaxVelocity = maxVelocity * timestep;
+    boidList.do{|boid|
+      boid.maxVelocity = workingMaxVelocity; // set it in each individual boid
+    };
   }
 
   /////////////////////////////
