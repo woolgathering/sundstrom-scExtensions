@@ -15,9 +15,9 @@
 
 
 BoidsND {
-  var <dimensions, <numBoids, <>timestep, <>centerInstinct, <>innerDistance, <>matchVelocity, <centerOfMass;
+  var <dimensions, <numBoids, <timestep, <>centerInstinct, <>innerDistance, <>matchVelocity, <centerOfMass;
   var >boidList, <maxVelocity, workingMaxVelocity, <minSpace, targets, obstacles;
-  var <bounds;
+  var <bounds, <wrap;
 
   *new {|dimensions = 3, numBoids = 10, timestep = 0.5, centerInstinct = 1, innerDistance = 1, matchVelocity = 1|
     ^super.newCopyArgs(dimensions, numBoids, timestep, centerInstinct, innerDistance, matchVelocity).init;
@@ -33,6 +33,7 @@ BoidsND {
     this.prFillBoidList(numBoids); // fill the list with boids
     targets = List.new(0);
     obstacles = List.new(0);
+    wrap = false;
   }
 
   // rule 1
@@ -97,6 +98,7 @@ BoidsND {
     initVel = RealVector.newFrom(Array.fill(dimensions, {rrand(0.0,3.0)})); // random velocity
     boid = BoidUnitND.new(dimensions, bounds, initVel, initPos, workingMaxVelocity); // make it
     boidList.add(boid); // add it
+    numBoids = boidList.size; // update
   }
 
   removeBoid {|index|
@@ -105,10 +107,7 @@ BoidsND {
     } {
       boidList.removeAt(index); // else, remove at the index
     };
-  }
-
-  sizeOfFlock {
-    ^boidList.size; // return the size of the flock
+    numBoids = boidList.size; // update
   }
 
   moveFlock {|func|
@@ -340,8 +339,8 @@ BoidsND {
 // not directly used but rather used by Boids
 ////////////////////////////////////////////////////////////
 BoidUnitND {
-  var <>dim, <bounds, <>pos, <>vel, <maxVelocity, <nodeID, <centerOfMass;
-  var <>centerInstinct, <>innerDistance, <>matchVelocity;
+  var <>dim, <>bounds, <>pos, <>vel, <maxVelocity, <nodeID, <centerOfMass;
+  var <>centerInstinct, <>innerDistance, <>matchVelocity, <>wrap;
   classvar halfCosTable;
 
   *initClass {
@@ -371,24 +370,22 @@ BoidUnitND {
     centerOfMass = args[2] ? RealVector.rand(dim,-10,10);
     innerDistance = args[3] ? RealVector.rand(dim,-10,10);
     matchVelocity = args[4] ? RealVector.rand(dim,-10,10);
-
     centerInstinct = centerOfMass/100; // set this here
     vel = vel.limit(maxVelocity); // limit the size of the velocity vector
+    wrap = wrap ? false; // default to no wrapping
   }
 
+  // bound coordinates
   bound {
-    // var vec, boundVectors = List.new(0);
     var vec = RealVector.zero(dim);
     dim.do{|i|
       var amount = 0;
       if(pos[i] < bounds[i][0]) {
           amount = bounds[i][0] + pos[i].abs; // how far off are we
-          // amount = maxVelocity * (amount/maxVelocity).min(1);
         }
         {
           if(pos[i] > bounds[i][1]) {
             amount = bounds[i][1] - pos[i]; // how far off are we
-            // amount = maxVelocity * (amount/maxVelocity).min(1);
           };
         };
       vec[i] = amount;
@@ -396,11 +393,24 @@ BoidUnitND {
     vel = vel + vec; // add the vectors
   }
 
+  // wrap coordinates
+  prWrap {
+    dim.do{|i|
+      if(pos[i] < bounds[i][0]) {
+        pos[i] = bounds[i].abs.sum + pos[i];
+      } {
+        if(pos[i] > bounds[i][1]) {
+          pos[i] = pos[i] - bounds[i].abs.sum;
+        };
+      };
+    };
+  }
+
   moveBoid {|targets, obstacles|
     if (targets.isEmpty.not) {vel = vel + this.calcTargets(targets)}; // if there are targets, calculate the vector
     if (obstacles.isEmpty.not) {vel = vel + this.calcObstacles(obstacles)}; // if there are obstacles, calculate the vector
     vel = vel + centerInstinct + innerDistance + matchVelocity; // sum the vectors and get a new velocity
-    this.bound; // bound the coordinates
+    if(wrap) {this.prWrap} {this.bound}; // wrap or bound
     vel = vel.limit(maxVelocity); // speed limit
     pos = pos + vel; // get the new position
   }
@@ -486,7 +496,6 @@ BoidUnitND {
   /////////////////////////////////
   centerOfMass_ {|vec|
     centerOfMass = vec; // get the perceived center of mass for this BoidUnit
-    // each time we get a new center of mass, recalculate the first vector offset
     centerInstinct = centerOfMass/100; // get the vector that moves it 1% toward the center of the flock (this can be weighted??)
   }
 
@@ -495,7 +504,4 @@ BoidUnitND {
     vel = vel.limit(maxVelocity); // limit it if it's bigger
   }
 
-  bounds_ {|val|
-    bounds = val;
-  }
 }
